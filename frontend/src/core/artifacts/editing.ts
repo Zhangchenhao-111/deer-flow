@@ -2,6 +2,7 @@ export interface ArtifactDraftState {
   filepath: string;
   baselineContent: string;
   baselineSha256: string | null;
+  baselineTruncated: boolean;
   draftContent: string;
   conflict: boolean;
 }
@@ -11,6 +12,7 @@ export function createArtifactDraft(filepath: string): ArtifactDraftState {
     filepath,
     baselineContent: "",
     baselineSha256: null,
+    baselineTruncated: false,
     draftContent: "",
     conflict: false,
   };
@@ -18,9 +20,21 @@ export function createArtifactDraft(filepath: string): ArtifactDraftState {
 
 export function reconcileArtifactDraft(
   current: ArtifactDraftState,
-  loaded: { content: string; sha256: string },
+  loaded: { content: string; sha256: string; truncated?: boolean },
 ): ArtifactDraftState {
   if (loaded.sha256 === current.baselineSha256) {
+    if (
+      current.baselineTruncated &&
+      !loaded.truncated &&
+      current.draftContent === current.baselineContent
+    ) {
+      return {
+        ...current,
+        baselineContent: loaded.content,
+        baselineTruncated: false,
+        draftContent: loaded.content,
+      };
+    }
     return current;
   }
   if (current.draftContent !== current.baselineContent) {
@@ -30,6 +44,7 @@ export function reconcileArtifactDraft(
     ...current,
     baselineContent: loaded.content,
     baselineSha256: loaded.sha256,
+    baselineTruncated: loaded.truncated ?? false,
     draftContent: loaded.content,
     conflict: false,
   };

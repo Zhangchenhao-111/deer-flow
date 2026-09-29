@@ -38,6 +38,43 @@ describe("artifact draft reconciliation", () => {
     expect(refreshed.baselineContent).toBe("first");
     expect(refreshed.conflict).toBe(true);
   });
+
+  it("promotes a clean truncated baseline when the full content has the same revision", () => {
+    const content = "a".repeat(10);
+    const fullContent = `${content}tail`;
+    const loaded = reconcileArtifactDraft(
+      createArtifactDraft("/mnt/user-data/outputs/large.txt"),
+      { content, sha256: "a".repeat(64), truncated: true },
+    );
+    const full = reconcileArtifactDraft(loaded, {
+      content: fullContent,
+      sha256: "a".repeat(64),
+      truncated: false,
+    });
+
+    expect(full.baselineContent).toBe(fullContent);
+    expect(full.draftContent).toBe(fullContent);
+    expect(full.baselineTruncated).toBe(false);
+    expect(full.conflict).toBe(false);
+  });
+
+  it("keeps a dirty truncated draft when the full content has the same revision", () => {
+    const loaded = reconcileArtifactDraft(
+      createArtifactDraft("/mnt/user-data/outputs/large.txt"),
+      { content: "preview", sha256: "a".repeat(64), truncated: true },
+    );
+    const edited = { ...loaded, draftContent: "my changes" };
+    const full = reconcileArtifactDraft(edited, {
+      content: "preview plus the rest",
+      sha256: "a".repeat(64),
+      truncated: false,
+    });
+
+    expect(full.draftContent).toBe("my changes");
+    expect(full.baselineContent).toBe("preview");
+    expect(full.baselineTruncated).toBe(true);
+    expect(full.conflict).toBe(false);
+  });
 });
 
 describe("opened artifact edit eligibility", () => {

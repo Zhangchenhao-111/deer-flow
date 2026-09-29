@@ -244,13 +244,17 @@ export function ArtifactFileDetail({
     }
     setDrafts((current) => {
       const existing = current[filepath] ?? createArtifactDraft(filepath);
-      const next = reconcileArtifactDraft(existing, { content, sha256 });
+      const next = reconcileArtifactDraft(existing, {
+        content,
+        sha256,
+        truncated,
+      });
       if (next === existing) {
         return current;
       }
       return { ...current, [filepath]: next };
     });
-  }, [content, filepath, isWriteFile, setDrafts, sha256]);
+  }, [content, filepath, isWriteFile, setDrafts, sha256, truncated]);
 
   const [viewMode, setViewMode] = useState<"code" | "preview">(
     artifactViewState.initialViewMode,
@@ -276,6 +280,7 @@ export function ArtifactFileDetail({
         ...activeDraft,
         baselineContent: latestContent,
         baselineSha256: latestSha256,
+        baselineTruncated: false,
         draftContent: latestContent,
         conflict: false,
       },
@@ -310,6 +315,7 @@ export function ArtifactFileDetail({
           filepath,
           baselineContent: savedContent,
           baselineSha256: result.sha256,
+          baselineTruncated: false,
           draftContent: savedContent,
           conflict: false,
         },
