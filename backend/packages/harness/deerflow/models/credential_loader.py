@@ -116,8 +116,8 @@ def _read_secret_from_file_descriptor(env_var: str) -> str | None:
             return cached
 
         try:
-            secret = os.read(fd, 1024 * 1024).decode().strip()
-        except OSError as e:
+            secret = os.read(fd, 1024 * 1024).decode("utf-8").strip()
+        except (OSError, UnicodeDecodeError) as e:
             logger.warning(f"Failed to read {env_var}: {e}")
             return None
 

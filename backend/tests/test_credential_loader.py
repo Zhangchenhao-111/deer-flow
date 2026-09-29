@@ -73,6 +73,21 @@ def test_load_claude_code_credential_from_file_descriptor(monkeypatch):
     assert cred.source == "claude-cli-fd"
 
 
+def test_load_claude_code_credential_skips_undecodable_file_descriptor(monkeypatch, caplog):
+    _clear_claude_code_env(monkeypatch)
+    read_fd, write_fd = os.pipe()
+    try:
+        os.write(write_fd, b"\xff")
+        os.close(write_fd)
+        monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR", str(read_fd))
+
+        assert load_claude_code_credential() is None
+    finally:
+        os.close(read_fd)
+
+    assert "Failed to read CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR" in caplog.text
+
+
 def _pipe_with_secret(secret: bytes) -> int:
     read_fd, write_fd = os.pipe()
     os.write(write_fd, secret)
